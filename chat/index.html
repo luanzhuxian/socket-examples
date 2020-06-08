@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Socket.IO chat</title>
+    <style>
+    * { 
+        margin: 0; 
+        padding: 0; 
+        box-sizing: border-box; 
+    }
+    body { 
+        font: 13px Helvetica, Arial; 
+    }
+    container {
+        display: flex;
+    }
+
+    ul {
+        flex: 1;
+        list-style-type: none; 
+        margin: 0; 
+        padding: 0;
+        height: calc(100vh - 200px);
+        border: 1px solid #000;
+        overflow-y: scroll;
+    }
+    ul > li { padding: 5px 10px; }
+    ul > li:nth-child(odd) { background: #eee; }
+
+    .tip {
+        color: orange;
+        display: none;
+    }
+
+    .wrapper { position: fixed; bottom: 0; width: 100%; }
+    form { background: #000; padding: 3px; }
+    form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
+    form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
+    </style>
+  </head>
+  <body>
+    <container>
+        <ul id="socket1-messages"></ul>
+        <ul id="socket2-messages"></ul>
+        <ul id="socket3-messages"></ul>
+    </container>
+    <div id="tip" class="tip"></div>
+    <div class="wrapper">
+        <form id="socket1-form" action="">
+        <input id="socket1-input" autocomplete="off" placeholder="socket1" />
+        <button>Send</button>
+        </form>
+        <form id="socket2-form" action="">
+        <input id="socket2-input" autocomplete="off" placeholder="socket2" />
+        <button>Send</button>
+        </form>
+        <form id="socket3-form" action="">
+        <input id="socket3-input" autocomplete="off" placeholder="socket3" />
+        <button>Send</button>
+        </form>
+    </div>
+    <script src="https://cdn.bootcdn.net/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+
+    <script>
+        // 没有指定 URL，默认将尝试连接到提供当前页面的主机
+
+        $(function () {
+            // function randomString (len = 8) {
+            //     const CHARS = 'ABCDEFGHJKMNPQRSTWXYZabcdefhijkmnprstwxyz2345678'
+            //     const maxPos = CHARS.length
+            //     let pwd = ''
+            //     while (pwd.length < len) {
+            //         pwd += CHARS.charAt(Math.floor(Math.random() * maxPos))
+            //     }
+            //     return pwd
+            // }
+
+            function debounce(func, wait) {
+                var timer
+                return function () {
+                    var context = this
+                    var args = arguments
+                    clearTimeout(timer)
+                    timer = setTimeout(() => {
+                        func.apply(context, args)
+                    }, wait)
+                }
+            }
+
+            const finish = debounce(function (socket) {
+                socket.emit('keypressdone')
+            }, 500)
+
+            const join = name => id => $(`#${name}-messages`).append($('<li>').text(`${id} 来了`))
+            const left = name => id => $(`#${name}-messages`).append($('<li>').text(`${id} 离开了`))
+            const message = name => ({ id, msg }) => $(`#${name}-messages`).append($('<li>').text(`${id}: ${msg}`))
+            const keypress = id => $('#tip').text(`${id}正在输入。。。`).show()
+            const keypressdone = () => $('#tip').text('').hide()
+            const init = (socket, name) => {
+                socket.on('join', join(name))
+                socket.on('left', left(name))
+                socket.on('message', message(name))
+                socket.on('keypress', keypress)
+                socket.on('keypressdone', keypressdone)
+                $(`#${name}-form`).submit(() => {
+                    socket.emit('message', $(`#${name}-input`).val())
+                    $(`#${name}-input`).val('')
+                    return false
+                })
+                $(`#${name}-input`).bind('input propertychange', () => {
+                    socket.emit('keypress')
+                    finish(socket)
+                })
+            }
+            
+            const socket1 = io()
+            const socket2 = io()
+            const socket3 = io()
+
+            init(socket1, 'socket1')
+            init(socket2, 'socket2')
+            init(socket3, 'socket3')
+
+        })
+    </script>
+  </body>
+</html>
