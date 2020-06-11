@@ -92,17 +92,18 @@
                 socket.emit('keypressdone')
             }, 500)
 
-            const join = name => id => $(`#${name}-messages`).append($('<li>').text(`${id} 来了`))
-            const left = name => id => $(`#${name}-messages`).append($('<li>').text(`${id} 离开了`))
-            const message = name => ({ id, msg }) => $(`#${name}-messages`).append($('<li>').text(`${id}: ${msg}`))
-            const keypress = id => $('#tip').text(`${id}正在输入。。。`).show()
-            const keypressdone = () => $('#tip').text('').hide()
+            const joinHandler = name => id => $(`#${name}-messages`).append($('<li>').text(`${id} 来了`))
+            const leftHandler = name => id => $(`#${name}-messages`).append($('<li>').text(`${id} 离开了`))
+            const messageHandler = name => ({ id, msg }) => $(`#${name}-messages`).append($('<li>').text(`${id}: ${msg}`))
+            const keypressHandler = id => $('#tip').text(`${id}正在输入。。。`).show()
+            const keypressdoneHandler = () => $('#tip').text('').hide()
+
             const init = (socket, name) => {
-                socket.on('join', join(name))
-                socket.on('left', left(name))
-                socket.on('message', message(name))
-                socket.on('keypress', keypress)
-                socket.on('keypressdone', keypressdone)
+                socket.on('join', joinHandler(name))
+                socket.on('left', leftHandler(name))
+                socket.on('message', messageHandler(name))
+                socket.on('keypress', keypressHandler)
+                socket.on('keypressdone', keypressdoneHandler)
                 $(`#${name}-form`).submit(() => {
                     socket.emit('message', $(`#${name}-input`).val())
                     $(`#${name}-input`).val('')
@@ -114,6 +115,7 @@
                 })
             }
             
+            // 不填的话就表示默认连接当前路径
             const socket1 = io()
             const socket2 = io()
             const socket3 = io()

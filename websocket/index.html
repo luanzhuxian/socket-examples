@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Document</title>
+    </head>
+    <body>
+        123
+        <div id="text"></div>
+        <script>
+            let ws = new WebSocket('ws://localhost:9999')
+
+            // 客户端与服务端建立连接后触发
+            ws.onopen = function () {
+                ws.send('你好')
+            }
+
+            // 服务端给客户端发来消息的时候触发
+            ws.onmessage = function (res) {
+
+                // 打印的是 MessageEvent 对象
+                console.log(res)
+
+                // 真正的消息数据是 res.data
+                console.log(`Received message ${res.data} from server side`)
+
+                const dom = document.querySelector('#text')
+                dom.innerHTML = res.data
+            }
+        </script>
+    </body>
+</html>
