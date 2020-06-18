@@ -26,6 +26,7 @@
     }
     ul > li { padding: 5px 10px; }
     ul > li:nth-child(odd) { background: #eee; }
+    ul > li > span.name { cursor: pointer; }
 
     .tip {
         color: orange;
@@ -40,9 +41,9 @@
   </head>
   <body>
     <container>
-        <ul id="socket1-messages"></ul>
-        <ul id="socket2-messages"></ul>
-        <ul id="socket3-messages"></ul>
+        <ul id="socket1-messages" onclick="clickHandler(1)"></ul>
+        <ul id="socket2-messages" onclick="clickHandler(2)"></ul>
+        <ul id="socket3-messages" onclick="clickHandler(3)"></ul>
     </container>
     <div id="tip" class="tip"></div>
     <div class="wrapper">
@@ -65,7 +66,7 @@
     <script>
         // 没有指定 URL，默认将尝试连接到提供当前页面的主机
 
-        $(function () {
+        // $(function () {
             // function randomString (len = 8) {
             //     const CHARS = 'ABCDEFGHJKMNPQRSTWXYZabcdefhijkmnprstwxyz2345678'
             //     const maxPos = CHARS.length
@@ -92,9 +93,25 @@
                 socket.emit('keypressdone')
             }, 500)
 
+            const clickHandler = (id) => {
+                const { target } = window.event
+                const { className, innerHTML } = target
+
+                if (className !== 'name') return
+
+                const name = innerHTML.split(':')[0]
+                $(`#socket${id}-input`).val(`@${name} `)
+            }
+
             const joinHandler = name => id => $(`#${name}-messages`).append($('<li>').text(`${id} 来了`))
             const leftHandler = name => id => $(`#${name}-messages`).append($('<li>').text(`${id} 离开了`))
-            const messageHandler = name => ({ id, msg }) => $(`#${name}-messages`).append($('<li>').text(`${id}: ${msg}`))
+            const messageHandler = name => ({ id, msg }) => $(`#${name}-messages`).append($(`
+                    <li>
+                        <span class="name">${id}: </span>
+                        ${msg}
+                    </li>
+                `)
+            )
             const keypressHandler = id => $('#tip').text(`${id}正在输入。。。`).show()
             const keypressdoneHandler = () => $('#tip').text('').hide()
 
@@ -124,7 +141,7 @@
             init(socket2, 'socket2')
             init(socket3, 'socket3')
 
-        })
+        // })
     </script>
   </body>
 </html>
