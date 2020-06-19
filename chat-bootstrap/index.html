@@ -130,7 +130,7 @@
 
         // 监听是否已离开房间
         // 如果已离开房间，就显示进入房间按钮
-        socket.on('leaved', room => {
+        socket.on('left', room => {
            document.getElementById(`leave-${room}`).style.display = 'none'
            document.getElementById(`join-${room}`).style.display = 'inline-block'
         })

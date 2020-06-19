@@ -76,10 +76,10 @@ io.on('connection', socket => {
                 // 如果 rooms 数组不为空，就代表有用户进入了房间
                 if (rooms.length) {
                     for (const room of rooms) {                        
-                        // 取得每个房间内所有 socket 的 hash 值，即 socket.id
+                        // 遍历该用户加入的所有房间，取得每个房间内所有 socket 集合
                         const roomSockets = io.sockets.adapter.rooms[room].sockets
 
-                        // 遍历 roomSockets，在 socketIdMap 里找到对应的 id，然后发送消息
+                        // 遍历 roomSockets 集合，向该房间每一个 socket 发送信息
                         for (const socketId of Object.keys(roomSockets)) {               
                             console.log('room', room, socketId)
                             
@@ -154,8 +154,8 @@ io.on('connection', socket => {
         if (index !== -1) {
             socket.leave(room) // 离开该房间
             rooms.splice(index, 1) // 删掉该房间
-            // 这里发送个 leaved 事件，让前端监听后，控制房间按钮显隐
-            socket.emit('leaved', room)
+            // 这里发送个 left 事件，让前端监听后，控制房间按钮显隐
+            socket.emit('left', room)
             // 通知一下自己
             socket.send({
                 user: '系统消息',
