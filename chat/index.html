@@ -16,6 +16,7 @@
     }
 
     ul {
+        position: relative;
         flex: 1;
         list-style-type: none; 
         margin: 0; 
@@ -26,7 +27,35 @@
     }
     ul > li { padding: 5px 10px; }
     ul > li:nth-child(odd) { background: #eee; }
-    ul > li > span.name { cursor: pointer; }
+    ul > li > span.user-name { cursor: pointer; }
+
+    ul > .button-group {
+        position: absolute;
+        bottom: 0;
+        width: 100%;
+        display: flex;
+    }
+
+    ul > .button-group > button {
+        flex: 1;
+        width: 0;
+        height: 30px;
+        color: #fff;
+    }
+
+    button {
+        cursor: pointer;
+    }
+
+    button.a {
+        background-color: crimson;
+    }
+    button.b {
+        background-color: darkorange;
+    }
+    button.c {
+        background-color: darkgreen; 
+    }
 
     .tip {
         color: orange;
@@ -41,9 +70,36 @@
   </head>
   <body>
     <container>
-        <ul id="socket1-messages" onclick="clickHandler(1)"></ul>
-        <ul id="socket2-messages" onclick="clickHandler(2)"></ul>
-        <ul id="socket3-messages" onclick="clickHandler(3)"></ul>
+        <ul id="socket1-messages" onclick="clickHandler('socket1')">
+            <div class="button-group">
+                <button id="join-a" class="btn a" onclick="join('a', 'socket1')">进入a房间</button>
+                <button id="leave-a" class="btn a" onclick="leave('a', 'socket1')" style="display: none;">离开a房间</button>
+                <button id="join-b" class="btn b" onclick="join('b', 'socket1')">进入b房间</button>
+                <button id="leave-b" class="btn b" onclick="leave('b', 'socket1')" style="display: none;">离开b房间</button>
+                <button id="join-c" class="btn c" onclick="join('c', 'socket1')">进入c房间</button>
+                <button id="leave-c" class="btn c" onclick="leave('c', 'socket1')" style="display: none;">离开c房间</button>
+            </div>
+        </ul>
+        <ul id="socket2-messages" onclick="clickHandler('socket2')">
+            <div class="button-group">
+                <button id="join-a" class="btn a" onclick="join('a', 'socket2')">进入a房间</button>
+                <button id="leave-a" class="btn a" onclick="leave('a', 'socket2')" style="display: none;">离开a房间</button>
+                <button id="join-b" class="btn b" onclick="join('b', 'socket2')">进入b房间</button>
+                <button id="leave-b" class="btn b" onclick="leave('b', 'socket2')" style="display: none;">离开b房间</button>
+                <button id="join-c" class="btn c" onclick="join('c', 'socket2')">进入c房间</button>
+                <button id="leave-c" class="btn c" onclick="leave('c', 'socket2')" style="display: none;">离开c房间</button>
+            </div>
+        </ul>
+        <ul id="socket3-messages" onclick="clickHandler('socket3')">
+            <div class="button-group">
+                <button id="join-a" class="btn a" onclick="join('a', 'socket3')">进入a房间</button>
+                <button id="leave-a" class="btn a" onclick="leave('a', 'socket3')" style="display: none;">离开a房间</button>
+                <button id="join-b" class="btn b" onclick="join('b', 'socket3')">进入b房间</button>
+                <button id="leave-b" class="btn b" onclick="leave('b', 'socket3')" style="display: none;">离开b房间</button>
+                <button id="join-c" class="btn c" onclick="join('c', 'socket3')">进入c房间</button>
+                <button id="leave-c" class="btn c" onclick="leave('c', 'socket3')" style="display: none;">离开c房间</button>
+            </div>
+        </ul>
     </container>
     <div id="tip" class="tip"></div>
     <div class="wrapper">
@@ -77,11 +133,42 @@
             //     return pwd
             // }
 
+            let socket1
+            let socket2
+            let socket3
+            
+            function findCurrentSocket (socketName) {
+                switch (socketName) {
+                    case 'socket1':
+                        return socket1
+                        break;
+                    case 'socket2':
+                        return socket2
+                        break;
+                    case 'socket3':
+                        return socket3
+                        break;
+                
+                    default:
+                        break;
+                }
+            }
+
+            function checkMsgValidity (msg) {
+                const _isPrivate = msg => !!msg.match(/@([^ ]+)/)
+
+                if (_isPrivate(msg)) {
+                    const private = msg.match(/@([^ ]+) (.+)/)
+                    msg = private ? private[1] : ''
+                }
+                return !!msg
+            }
+
             function debounce(func, wait) {
-                var timer
+                let timer
                 return function () {
-                    var context = this
-                    var args = arguments
+                    const context = this
+                    const args = arguments
                     clearTimeout(timer)
                     timer = setTimeout(() => {
                         func.apply(context, args)
@@ -93,49 +180,89 @@
                 socket.emit('keypressdone')
             }, 500)
 
-            const clickHandler = (id) => {
+
+            const clickHandler = (socketName) => {
                 const { target } = window.event
                 const { className, innerHTML } = target
+                const userName = innerHTML.split(':')[0]
+                const { id } = findCurrentSocket(socketName)
 
-                if (className !== 'name') return
+                if (className !== 'user-name') return
+                if (userName === id) return console.warn('不能给自己发信息')
 
-                const name = innerHTML.split(':')[0]
-                $(`#socket${id}-input`).val(`@${name} `)
+                $(`#${socketName}-input`).val(`@${userName} `)
             }
 
-            const joinHandler = name => id => $(`#${name}-messages`).append($('<li>').text(`${id} 来了`))
-            const leftHandler = name => id => $(`#${name}-messages`).append($('<li>').text(`${id} 离开了`))
-            const messageHandler = name => ({ id, msg }) => $(`#${name}-messages`).append($(`
-                    <li>
-                        <span class="name">${id}: </span>
+            const connectHandler = socketName => id => $(`#${socketName}-messages`).append($('<li style="color: darkorange;">').text(`${id} 来了`))
+            const disconnectHandler = socketName => id => $(`#${socketName}-messages`).append($('<li style="color: darkgreen;">').text(`${id} 离开了`))
+            const joinedHandler = socketName => room => {
+                $(`#${socketName}-messages #join-${room}`).hide()
+                $(`#${socketName}-messages #leave-${room}`).show()
+            }
+            const leftHandler = socketName => room => {
+                $(`#${socketName}-messages #leave-${room}`).hide()
+                $(`#${socketName}-messages #join-${room}`).show()
+            }
+            const messageHandler = socketName => ({ id, msg, color }) => {
+                $(`#${socketName}-messages`).append($(`
+                    <li style="color: ${color}">
+                        <span class="user-name">${id}: </span>
                         ${msg}
                     </li>
-                `)
-            )
+                `))
+            }
             const keypressHandler = id => $('#tip').text(`${id}正在输入。。。`).show()
             const keypressdoneHandler = () => $('#tip').text('').hide()
 
-            const init = (socket, name) => {
-                socket.on('join', joinHandler(name))
-                socket.on('left', leftHandler(name))
-                socket.on('message', messageHandler(name))
+            const init = (socket, socketName) => {
+                socket.on('connectEvent', connectHandler(socketName))
+                socket.on('disconnectEvent', disconnectHandler(socketName))
+                socket.on('joined', joinedHandler(socketName))
+                socket.on('left', leftHandler(socketName))
+                socket.on('message', messageHandler(socketName))
                 socket.on('keypress', keypressHandler)
                 socket.on('keypressdone', keypressdoneHandler)
-                $(`#${name}-form`).submit(() => {
-                    socket.emit('message', $(`#${name}-input`).val())
-                    $(`#${name}-input`).val('')
+
+                $(`#${socketName}-form`).submit(() => {
+                    // 防止表单提交后自动刷新
+                    event.preventDefault()
+
+                    const msg = $(`#${socketName}-input`).val()
+
+                    if (!checkMsgValidity(msg)) {
+                        return alert('信息不能为空')                        
+                    }
+
+                    socket.emit('message', msg)
+                    $(`#${socketName}-input`).val('')
                     return false
                 })
-                $(`#${name}-input`).bind('input propertychange', () => {
+                $(`#${socketName}-input`).bind('input propertychange', () => {
                     socket.emit('keypress')
                     finish(socket)
                 })
             }
+
+
+            const join = (room, socketName) => {
+                event.preventDefault()
+
+                const socket = findCurrentSocket(socketName)
+                socket.emit('join', room)
+            }
+
+            const leave = (room, socketName) => {
+                event.preventDefault()
+
+                const socket = findCurrentSocket(socketName)
+                socket.emit('leave', room)
+            }
+            
             
             // 不填的话就表示默认连接当前路径
-            const socket1 = io()
-            const socket2 = io()
-            const socket3 = io()
+            socket1 = io()
+            socket2 = io()
+            socket3 = io()
 
             init(socket1, 'socket1')
             init(socket2, 'socket2')
